@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRoles {
+  teacher
+  admin
+  student
+}
+
+model School {
+  id          String       @id @unique @default(cuid())
+  name        String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  // users       User[]
+  courses     Course[]
+  students    Student[]
+  teachers    Teacher[]
+  admins      Admin[]
+  departments Department[]
+  groups      Group[]
+}
+
+// model User {
+//   id       String    @id @unique @default(cuid())
+//   clerkId  String    @unique
+//   schoolId String
+//   role     UserRoles
+//   school   School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+// }
+
+model Admin {
+  clerkId   String   @id @unique
+  firstName String
+  lastName  String
+  email     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([email, schoolId])
+}
+
+model Teacher {
+  clerkId   String   @id @unique
+  firstName String
+  lastName  String
+  email     String
+  schoolId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  groups    Group[]
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([email, schoolId])
+}
+
+model Student {
+  clerkId     String       @id @unique
+  firstName   String
+  lastName    String
+  email       String
+  schoolId    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  groups      Group[]
+  departments Department[]
+  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([email, schoolId])
+}
+
+model Course {
+  id           String     @id @unique @default(cuid())
+  name         String
+  code         String
+  credit       Int
+  departmentId String
+  schoolId     String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  groups       Group[]
+  department   Department @relation(fields: [departmentId], references: [id])
+  school       School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([code, schoolId])
+}
+
+model Group {
+  id        String    @id @unique @default(cuid())
+  number    Int       @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  teacherId String
+  courseId  String
+  schoolId  String
+  students  Student[]
+  teacher   Teacher   @relation(fields: [teacherId], references: [clerkId])
+  course    Course    @relation(fields: [courseId], references: [id])
+  school    School    @relation(fields: [schoolId], references: [id])
+
+  @@unique([teacherId, schoolId, courseId])
+}
+
+model Department {
+  id        String    @id @unique @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  students  Student[]
+  courses   Course[]
+
+  school   School @relation(fields: [schoolId], references: [id])
+  schoolId String
+}
